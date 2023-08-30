@@ -68,3 +68,43 @@ def test_delete_user(client, user, token):
     )
     assert response.status_code == 200
     assert response.json() == {'detail': 'User deleted'}
+
+
+def test_update_user_with_wrong_user(client, other_user, token):
+    response = client.put(
+        f'/users/{other_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'mynewpassword',
+        },
+    )
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'Not enough permissions'}
+
+
+def test_delete_user_wrong_user(client, other_user, token):
+    response = client.delete(
+        f'/users/{other_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'Not enough permissions'}
+
+
+def test_token_inexistent_user(client):
+    response = client.post(
+        '/token',
+        data={'username': 'no_user@no_domain.com', 'password': 'testtest'},
+    )
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'Incorrect email or password'}
+
+
+def test_token_wrong_password(client, user):
+    response = client.post(
+        '/token', data={'username': user.email, 'password': 'wrong_password'}
+    )
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'Incorrect email or password'}
